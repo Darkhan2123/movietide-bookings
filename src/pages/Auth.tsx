@@ -12,8 +12,25 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const validateEmail = (email: string) => {
+    // RFC 5322 compliant email regex
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateEmail(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
     try {
       if (isSignUp) {
         await signUp(email, password);
@@ -23,8 +40,18 @@ const Auth = () => {
         toast.success('Welcome back!');
         navigate('/');
       }
-    } catch (error) {
-      toast.error(error.message);
+    } catch (error: any) {
+      let errorMessage = 'An error occurred';
+      
+      // Parse the error message from Supabase
+      try {
+        const errorBody = JSON.parse(error.message);
+        errorMessage = errorBody.message || errorBody.error_description || errorMessage;
+      } catch {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -39,6 +66,7 @@ const Auth = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="w-full"
           />
         </div>
         <div>
@@ -48,6 +76,8 @@ const Auth = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="w-full"
+            minLength={6}
           />
         </div>
         <Button type="submit" className="w-full">
