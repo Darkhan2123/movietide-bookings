@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Ticket {
   id: string;
@@ -62,11 +63,28 @@ const Profile = () => {
         <div className="grid gap-4 md:grid-cols-2">
           {tickets.map((ticket) => (
             <Card key={ticket.id} className="p-6">
-              <h3 className="text-lg font-semibold">{ticket.movie_title}</h3>
-              <p className="text-muted-foreground">
-                {new Date(ticket.showtime).toLocaleString()}
-              </p>
-              <p>Seats: {ticket.seats.join(', ')}</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">{ticket.movie_title}</h3>
+                  <p className="text-muted-foreground">
+                    {new Date(ticket.showtime).toLocaleString()}
+                  </p>
+                  <p>Seats: {ticket.seats.join(', ')}</p>
+                  <p className="text-green-500 mt-2">✓ Paid</p>
+                </div>
+                <div className="bg-white p-2 rounded">
+                  <QRCodeSVG
+                    value={JSON.stringify({
+                      ticketId: ticket.id,
+                      movieTitle: ticket.movie_title,
+                      showtime: ticket.showtime,
+                      seats: ticket.seats,
+                      paid: true
+                    })}
+                    size={100}
+                  />
+                </div>
+              </div>
             </Card>
           ))}
         </div>
