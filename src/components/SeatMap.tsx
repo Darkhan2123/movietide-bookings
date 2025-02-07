@@ -1,16 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 interface SeatMapProps {
   onSeatSelect: (seats: string[]) => void;
+  movieId: string;
+  showtime: string;
 }
 
-const SeatMap = ({ onSeatSelect }: SeatMapProps) => {
+const SeatMap = ({ onSeatSelect, movieId, showtime }: SeatMapProps) => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [takenSeats, setTakenSeats] = useState<string[]>([]);
   const rows = ['A', 'B', 'C', 'D', 'E', 'F'];
   const seatsPerRow = 8;
 
-  const takenSeats = ['A1', 'B4', 'C3', 'D5']; // Mock data
+  useEffect(() => {
+    // Subscribe to real-time seat updates
+    const channel = supabase
+      .channel(`seats:${movieId}:${showtime}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tickets',
+        filter: `movie_id=eq.${movieId} AND showtime=eq.${showtime}`,
+      }, (payload) => {
+        // Update taken seats when new tickets are created
+        if (payload.new) {
+          setTakenSeats(prev => [...prev, ...(payload.new as any).seats]);
+        }
+      })
+      .subscribe();
+
+    // Fetch initial taken seats
+    const fetchTakenSeats = async () => {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select('seats')
+        .eq('movie_id', movieId)
+        .eq('showtime', showtime);
+
+      if (!error && data) {
+        const allTakenSeats = data.flatMap(ticket => ticket.seats);
+        setTakenSeats(allTakenSeats);
+      }
+    };
+
+    fetchTakenSeats();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [movieId, showtime]);
 
   const handleSeatClick = (seatId: string) => {
     if (takenSeats.includes(seatId)) return;
