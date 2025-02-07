@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMovieDetails } from '@/services/tmdb';
 import { Button } from '@/components/ui/button';
-import { format, addDays } from 'date-fns';
+import { format, addDays, isSameDay } from 'date-fns';
 import SeatMap from '@/components/SeatMap';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,7 +71,7 @@ const Booking = () => {
           {dates.map((date) => (
             <Button
               key={date.toISOString()}
-              variant={date === selectedDate ? "default" : "outline"}
+              variant={isSameDay(date, selectedDate) ? "default" : "outline"}
               onClick={() => setSelectedDate(date)}
               className="min-w-[100px]"
             >
