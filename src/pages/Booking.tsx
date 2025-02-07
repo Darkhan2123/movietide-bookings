@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { format, addDays } from 'date-fns';
 import SeatMap from '@/components/SeatMap';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const SHOWTIMES = ['10:00', '13:00', '16:00', '19:00', '22:00'];
 
 const Booking = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -20,15 +23,37 @@ const Booking = () => {
     queryFn: () => getMovieDetails(id!),
   });
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedTime || selectedSeats.length === 0) {
       toast.error('Please select time and seats');
       return;
     }
-    
-    toast.success('Booking confirmed!', {
-      description: `${selectedSeats.length} seats booked for ${format(selectedDate, 'PP')} at ${selectedTime}`,
-    });
+
+    if (!user) {
+      toast.error('Please sign in to book tickets');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .insert({
+          user_id: user.id,
+          movie_id: id,
+          movie_title: movieData?.data.title,
+          showtime: `${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`,
+          seats: selectedSeats,
+          amount: selectedSeats.length * 12,
+        });
+
+      if (error) throw error;
+
+      toast.success('Booking confirmed!', {
+        description: `${selectedSeats.length} seats booked for ${format(selectedDate, 'PP')} at ${selectedTime}`,
+      });
+    } catch (error) {
+      toast.error('Failed to book tickets. Please try again.');
+    }
   };
 
   if (isLoading) return <div className="p-8">Loading...</div>;
@@ -75,7 +100,11 @@ const Booking = () => {
       {selectedTime && (
         <>
           <h2 className="text-xl font-semibold mb-4">Select Seats</h2>
-          <SeatMap onSeatSelect={setSelectedSeats} />
+          <SeatMap 
+            onSeatSelect={setSelectedSeats} 
+            movieId={id!}
+            showtime={`${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`}
+          />
           
           <div className="mt-8 flex justify-between items-center">
             <div>
