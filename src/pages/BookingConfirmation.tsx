@@ -2,6 +2,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { sendBookingConfirmation } from '@/services/EmailService';
+import { toast } from 'sonner';
 
 interface BookingDetails {
   movieTitle: string;
@@ -13,6 +16,7 @@ interface BookingDetails {
 const BookingConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const booking = location.state as BookingDetails;
 
   if (!booking) {
@@ -25,6 +29,20 @@ const BookingConfirmation = () => {
   }
 
   const showtime = new Date(booking.showtime);
+
+  const handleSendEmail = async () => {
+    if (!user?.email) {
+      toast.error('No email address found');
+      return;
+    }
+
+    try {
+      await sendBookingConfirmation(user.email, booking);
+      toast.success('Booking confirmation sent to your email');
+    } catch (error) {
+      toast.error('Failed to send confirmation email');
+    }
+  };
 
   return (
     <div className="min-h-screen p-8 max-w-2xl mx-auto">
@@ -76,10 +94,7 @@ const BookingConfirmation = () => {
           <Button 
             className="w-full" 
             variant="default"
-            onClick={() => {
-              // Here we can implement email functionality later
-              navigate('/');
-            }}
+            onClick={handleSendEmail}
           >
             Send Confirmation Email
           </Button>
