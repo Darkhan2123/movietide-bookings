@@ -14,16 +14,19 @@ export const sendBookingConfirmation = async (
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Use Supabase's email functionality with a template
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
-      data: {
-        type: 'booking_confirmation',
-        movie_title: bookingDetails.movieTitle,
-        showtime: bookingDetails.showtime,
-        seats: bookingDetails.seats.join(', '),
-        amount: bookingDetails.amount,
-        user_id: user.id
+    // Send email using Supabase's signInWithOtp (which can be used for sending custom emails)
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        data: {
+          type: 'booking_confirmation',
+          movie_title: bookingDetails.movieTitle,
+          showtime: bookingDetails.showtime,
+          seats: bookingDetails.seats.join(', '),
+          amount: bookingDetails.amount,
+          user_id: user.id
+        }
       }
     });
 
