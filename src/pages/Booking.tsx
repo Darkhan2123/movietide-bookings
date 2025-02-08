@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMovieDetails } from '@/services/tmdb';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ const SHOWTIMES = ['10:00', '13:00', '16:00', '19:00', '22:00'];
 
 const Booking = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('');
@@ -35,22 +37,32 @@ const Booking = () => {
     }
 
     try {
+      const showtime = `${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`;
+      const amount = selectedSeats.length * 12;
+
       const { error } = await supabase
         .from('tickets')
         .insert({
           user_id: user.id,
           movie_id: id,
           movie_title: movieData?.data.title,
-          showtime: `${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`,
+          showtime,
           seats: selectedSeats,
-          amount: selectedSeats.length * 12,
+          amount,
         });
 
       if (error) throw error;
 
-      toast.success('Booking confirmed!', {
-        description: `${selectedSeats.length} seats booked for ${format(selectedDate, 'PP')} at ${selectedTime}`,
+      // Navigate to confirmation page with booking details
+      navigate('/booking-confirmation', {
+        state: {
+          movieTitle: movieData?.data.title,
+          showtime,
+          seats: selectedSeats,
+          amount,
+        }
       });
+      
     } catch (error) {
       toast.error('Failed to book tickets. Please try again.');
     }
