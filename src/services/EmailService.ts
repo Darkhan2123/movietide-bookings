@@ -14,18 +14,19 @@ export const sendBookingConfirmation = async (
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase.functions.invoke('send-booking-email', {
-      body: {
-        to: email,
-        booking: {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/booking-confirmation`,
+      data: {
+        bookingDetails: {
           ...bookingDetails,
           userId: user.id,
         },
+        template: 'BOOKING_CONFIRMATION',
       },
     });
 
     if (error) throw error;
-    return data;
+    return { success: true };
   } catch (error) {
     console.error('Failed to send booking confirmation:', error);
     throw error;
