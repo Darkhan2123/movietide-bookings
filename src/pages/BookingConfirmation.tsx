@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { sendBookingConfirmation } from '@/services/EmailService';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface BookingDetails {
   movieTitle: string;
@@ -17,6 +18,8 @@ const BookingConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isSending, setIsSending] = useState(false);
+  
   const booking = location.state as BookingDetails;
 
   if (!booking) {
@@ -32,15 +35,24 @@ const BookingConfirmation = () => {
 
   const handleSendEmail = async () => {
     if (!user?.email) {
-      toast.error('No email address found');
+      toast.error('Please sign in to receive email confirmation');
       return;
     }
 
+    setIsSending(true);
     try {
-      await sendBookingConfirmation(user.email, booking);
-      toast.success('Booking confirmation sent to your email');
+      const { success, error } = await sendBookingConfirmation(user.email, booking);
+      
+      if (success) {
+        toast.success('Booking confirmation sent to your email');
+      } else {
+        toast.error(error || 'Failed to send confirmation email');
+      }
     } catch (error) {
+      console.error('Error sending confirmation:', error);
       toast.error('Failed to send confirmation email');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -95,13 +107,15 @@ const BookingConfirmation = () => {
             className="w-full" 
             variant="default"
             onClick={handleSendEmail}
+            disabled={isSending}
           >
-            Send Confirmation Email
+            {isSending ? 'Sending...' : 'Send Confirmation Email'}
           </Button>
           <Button 
             className="w-full" 
             variant="outline"
             onClick={() => navigate('/')}
+            disabled={isSending}
           >
             Return to Home
           </Button>

@@ -1,21 +1,30 @@
 
 import { supabase } from '@/lib/supabase';
 
+interface BookingDetails {
+  movieTitle: string;
+  showtime: string;
+  seats: string[];
+  amount: number;
+}
+
 export const sendBookingConfirmation = async (
   email: string,
-  bookingDetails: {
-    movieTitle: string;
-    showtime: string;
-    seats: string[];
-    amount: number;
-  }
-) => {
+  bookingDetails: BookingDetails
+): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Auth error:', userError);
+      return { success: false, error: 'Authentication error' };
+    }
+    
+    if (!user) {
+      return { success: false, error: 'User not authenticated' };
+    }
 
-    // Send email using Supabase's signInWithOtp (which can be used for sending custom emails)
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error: emailError } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false,
@@ -30,10 +39,14 @@ export const sendBookingConfirmation = async (
       }
     });
 
-    if (error) throw error;
+    if (emailError) {
+      console.error('Email error:', emailError);
+      return { success: false, error: 'Failed to send email' };
+    }
+
     return { success: true };
   } catch (error) {
-    console.error('Failed to send booking confirmation:', error);
-    throw error;
+    console.error('Unexpected error in sendBookingConfirmation:', error);
+    return { success: false, error: 'An unexpected error occurred' };
   }
 };
