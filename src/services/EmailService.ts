@@ -14,19 +14,18 @@ export const sendBookingConfirmation = async (
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Insert booking email data into a dedicated table
-    // This will trigger an email via Supabase Edge Functions or Webhooks
-    const { error } = await supabase
-      .from('booking_emails')
-      .insert({
-        user_id: user.id,
-        email: email,
+    // Use Supabase's email functionality with a template
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+      data: {
+        type: 'booking_confirmation',
         movie_title: bookingDetails.movieTitle,
         showtime: bookingDetails.showtime,
-        seats: bookingDetails.seats,
+        seats: bookingDetails.seats.join(', '),
         amount: bookingDetails.amount,
-        status: 'pending'
-      });
+        user_id: user.id
+      }
+    });
 
     if (error) throw error;
     return { success: true };
