@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +14,6 @@ const Auth = () => {
   const navigate = useNavigate();
 
   const validateEmail = (email: string) => {
-    // RFC 5322 compliant email regex
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     return emailRegex.test(email);
   };
@@ -37,18 +37,23 @@ const Auth = () => {
         toast.success('Account created! Please check your email to verify your account.');
       } else {
         await signIn(email, password);
-        toast.success('Welcome back!');
         navigate('/');
       }
     } catch (error: any) {
       let errorMessage = 'An error occurred';
       
-      // Parse the error message from Supabase
-      try {
-        const errorBody = JSON.parse(error.message);
-        errorMessage = errorBody.message || errorBody.error_description || errorMessage;
-      } catch {
-        errorMessage = error.message || errorMessage;
+      if (error?.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please try again.';
+      } else if (error?.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please verify your email address before signing in.';
+      } else {
+        // Try to parse the error message from Supabase
+        try {
+          const errorBody = JSON.parse(error.message);
+          errorMessage = errorBody.message || errorBody.error_description || errorMessage;
+        } catch {
+          errorMessage = error.message || errorMessage;
+        }
       }
       
       toast.error(errorMessage);
@@ -79,6 +84,9 @@ const Auth = () => {
             className="w-full"
             minLength={6}
           />
+          <p className="text-sm text-gray-500 mt-1">
+            {isSignUp && 'Password must be at least 6 characters long'}
+          </p>
         </div>
         <Button type="submit" className="w-full">
           {isSignUp ? 'Sign Up' : 'Sign In'}
