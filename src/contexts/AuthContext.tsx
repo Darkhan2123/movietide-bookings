@@ -1,6 +1,12 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import api from '@/lib/api';
+
+type User = {
+  id: string;
+  email: string;
+  username?: string;
+};
 
 type AuthContextType = {
   user: User | null;
@@ -16,33 +22,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if user is already logged in (via token)
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const response = await api.get('/auth/user/');
+          setUser(response.data);
+        } catch (error) {
+          // If token is invalid, clear it
+          localStorage.removeItem('auth_token');
+        }
+      }
       setLoading(false);
-    });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    const response = await api.post('/auth/login/', { email, password });
+    localStorage.setItem('auth_token', response.data.token);
+    setUser(response.data.user);
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
+    const response = await api.post('/auth/register/', { email, password });
+    localStorage.setItem('auth_token', response.data.token);
+    setUser(response.data.user);
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      await api.post('/auth/logout/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    } finally {
+      localStorage.removeItem('auth_token');
+      setUser(null);
+    }
   };
 
   return (

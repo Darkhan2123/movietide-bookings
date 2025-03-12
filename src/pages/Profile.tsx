@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import api from '@/lib/api';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QRCodeSVG } from 'qrcode.react';
@@ -21,14 +22,8 @@ const Profile = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const { data, error } = await supabase
-          .from('tickets')
-          .select('*')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setTickets(data || []);
+        const response = await api.get('/tickets/');
+        setTickets(response.data || []);
       } catch (error) {
         console.error('Error fetching tickets:', error);
       } finally {

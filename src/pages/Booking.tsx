@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,7 +7,7 @@ import { format, addDays, isSameDay } from 'date-fns';
 import SeatMap from '@/components/SeatMap';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import api from '@/lib/api';
 
 const SHOWTIMES = ['10:00', '13:00', '16:00', '19:00', '22:00'];
 
@@ -19,6 +18,7 @@ const Booking = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [isBooking, setIsBooking] = useState(false);
 
   const { data: movieData, isLoading } = useQuery({
     queryKey: ['movie', id],
@@ -36,22 +36,18 @@ const Booking = () => {
       return;
     }
 
+    setIsBooking(true);
     try {
       const showtime = `${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`;
       const amount = selectedSeats.length * 12;
 
-      const { error } = await supabase
-        .from('tickets')
-        .insert({
-          user_id: user.id,
-          movie_id: id,
-          movie_title: movieData?.data.title,
-          showtime,
-          seats: selectedSeats,
-          amount,
-        });
-
-      if (error) throw error;
+      const response = await api.post('/bookings/', {
+        movie_id: id,
+        movie_title: movieData?.data.title,
+        showtime,
+        seats: selectedSeats,
+        amount,
+      });
 
       // Navigate to confirmation page with booking details
       navigate('/booking-confirmation', {
@@ -63,8 +59,10 @@ const Booking = () => {
         }
       });
       
-    } catch (error) {
-      toast.error('Failed to book tickets. Please try again.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to book tickets. Please try again.');
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -123,8 +121,8 @@ const Booking = () => {
               <p className="text-lg font-semibold">Selected Seats: {selectedSeats.join(', ')}</p>
               <p className="text-lg">Total: ${selectedSeats.length * 12}</p>
             </div>
-            <Button size="lg" onClick={handleBooking}>
-              Confirm Booking
+            <Button size="lg" onClick={handleBooking} disabled={isBooking}>
+              {isBooking ? 'Processing...' : 'Confirm Booking'}
             </Button>
           </div>
         </>
