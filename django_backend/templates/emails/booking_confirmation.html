@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Ticket Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e63946;
+        }
+        .booking-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .booking-item {
+            margin-bottom: 15px;
+        }
+        .booking-label {
+            font-weight: bold;
+            display: block;
+        }
+        .booking-value {
+            display: block;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        .button {
+            display: inline-block;
+            background-color: #e63946;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MovieTime</div>
+        <h1>Your Booking Confirmation</h1>
+    </div>
+    
+    <p>Thank you for your booking! Here are the details of your movie tickets:</p>
+    
+    <div class="booking-details">
+        <div class="booking-item">
+            <span class="booking-label">Movie:</span>
+            <span class="booking-value">{{ movie_title }}</span>
+        </div>
+        
+        <div class="booking-item">
+            <span class="booking-label">Showtime:</span>
+            <span class="booking-value">{{ showtime }}</span>
+        </div>
+        
+        <div class="booking-item">
+            <span class="booking-label">Seats:</span>
+            <span class="booking-value">{{ seats }}</span>
+        </div>
+        
+        <div class="booking-item">
+            <span class="booking-label">Total Amount:</span>
+            <span class="booking-value">${{ amount }}</span>
+        </div>
+    </div>
+    
+    <p>Please arrive at least 15 minutes before the show starts. You can show this email or the QR code in your account for entry.</p>
+    
+    <div style="text-align: center;">
+        <a href="http://localhost:5173/profile" class="button">View Your Tickets</a>
+    </div>
+    
+    <div class="footer">
+        <p>MovieTime Cinemas<br>
+        123 Movie Street, Hollywood, CA 90028<br>
+        support@movietime.example.com</p>
+        <p>© 2023 MovieTime. All rights reserved.</p>
+    </div>
+</body>
+</html>
